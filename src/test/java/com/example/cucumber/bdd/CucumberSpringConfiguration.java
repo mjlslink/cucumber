@@ -15,11 +15,11 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 
 @CucumberContextConfiguration
-@SpringBootTest(classes = CucumberConfig.LibraryTestBootConfig.class)
+@SpringBootTest(classes = CucumberSpringConfiguration.LibraryTestBootConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(CucumberConfig.MockedServiceConfig.class)
-public class CucumberConfig {
+@Import(CucumberSpringConfiguration.MockedServiceConfig.class)
+public class CucumberSpringConfiguration {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
@@ -27,6 +27,11 @@ public class CucumberConfig {
         @Bean
         EpmHealthOverrideEndpoint epmHealthOverrideEndpoint(EndpointManagerService endpointManagerService) {
             return new EpmHealthOverrideEndpoint(endpointManagerService);
+        }
+
+        @Bean
+        EndpointManagerServiceEmulator endpointManagerServiceEmulator(EndpointManagerService endpointManagerService) {
+            return new EndpointManagerServiceEmulator(endpointManagerService);
         }
     }
 
@@ -39,3 +44,4 @@ public class CucumberConfig {
         }
     }
 }
+

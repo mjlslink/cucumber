@@ -1,12 +1,11 @@
 package com.example.cucumber.bdd;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -15,14 +14,14 @@ import java.util.Map;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class EpmHealthOverrideSteps {
+public class ActuatorGlue {
 
     private final MockMvc mockMvc;
     private final EndpointManagerServiceEmulator emulator;
-    private final ObjectMapper yamlObjectMapper = new ObjectMapper(new YAMLFactory());
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private ResultActions response;
 
-    public EpmHealthOverrideSteps(MockMvc mockMvc, EndpointManagerServiceEmulator emulator) {
+    public ActuatorGlue(MockMvc mockMvc, EndpointManagerServiceEmulator emulator) {
         this.mockMvc = mockMvc;
         this.emulator = emulator;
     }
@@ -34,17 +33,14 @@ public class EpmHealthOverrideSteps {
 
     @Given("the epm health override actuator is available")
     public void actuatorAvailable() {
-        // Context bootstrapping is handled by CucumberConfig.
+        // Context bootstrapping is handled by CucumberSpringConfiguration.
     }
 
     @When("I override health status to {string}")
     public void overrideHealthStatus(String status) throws Exception {
-        String yamlPayload = yamlObjectMapper.writeValueAsString(Map.of("status", status));
-        Map<String, String> parsedPayload = yamlObjectMapper.readValue(yamlPayload, new TypeReference<>() {
-        });
-
-        response = mockMvc.perform(post("/actuator/epm-health-override")
-                .param("status", parsedPayload.get("status")));
+        response = mockMvc.perform(post("/epp/netauths/h2/api/actuator/epm-health-override")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("status", status))));
     }
 
     @Then("the override request succeeds")
@@ -57,3 +53,4 @@ public class EpmHealthOverrideSteps {
         emulator.verifyOverrideCalledWith(status);
     }
 }
+

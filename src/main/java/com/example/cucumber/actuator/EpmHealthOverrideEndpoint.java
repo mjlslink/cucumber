@@ -3,8 +3,8 @@ package com.example.cucumber.actuator;
 import com.example.cucumber.service.EndpointManagerService;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
-
-import java.util.Map;
+import org.springframework.boot.actuate.endpoint.web.WebEndpointResponse;
+import org.springframework.stereotype.Component;
 
 @Component
 @Endpoint(id = "epm-health-override")
@@ -16,9 +16,10 @@ public class EpmHealthOverrideEndpoint {
         this.endpointManagerService = endpointManagerService;
     }
 
+    @SuppressWarnings("unused")
     @WriteOperation
-    public Web<String, String> override(String status) {
+    public WebEndpointResponse<Object> override(String status) {
         endpointManagerService.overrideHealthStatus(status);
-        return Map.of("acceptedStatus", status);
+        return new WebEndpointResponse<>(null, WebEndpointResponse.STATUS_NO_CONTENT);
     }
 }
