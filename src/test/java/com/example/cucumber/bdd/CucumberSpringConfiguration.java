@@ -1,12 +1,12 @@
 package com.example.cucumber.bdd;
 
-import com.example.cucumber.actuator.EpmHealthOverrideEndpoint;
-import com.example.cucumber.service.EndpointManagerService;
+import com.example.cucumber.actuator.health.EpmHealthReleaseOverrideEndpoint;
+import com.example.cucumber.actuator.health.EpmHealthOverrideEndpoint;
+import com.example.cucumber.service.SystemStatusService;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.mockito.Mockito;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -15,8 +15,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 
 @CucumberContextConfiguration
-@SpringBootTest(classes = CucumberSpringConfiguration.LibraryTestBootConfig.class)
-@AutoConfigureMockMvc
+@SpringBootTest(classes = CucumberSpringConfiguration.LibraryTestBootConfig.class,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Import(CucumberSpringConfiguration.MockedServiceConfig.class)
 public class CucumberSpringConfiguration {
@@ -25,13 +25,18 @@ public class CucumberSpringConfiguration {
     @EnableAutoConfiguration
     static class LibraryTestBootConfig {
         @Bean
-        EpmHealthOverrideEndpoint epmHealthOverrideEndpoint(EndpointManagerService endpointManagerService) {
-            return new EpmHealthOverrideEndpoint(endpointManagerService);
+        EpmHealthOverrideEndpoint epmHealthOverrideEndpoint(SystemStatusService systemStatusService) {
+            return new EpmHealthOverrideEndpoint(systemStatusService);
         }
 
         @Bean
-        EndpointManagerServiceEmulator endpointManagerServiceEmulator(EndpointManagerService endpointManagerService) {
-            return new EndpointManagerServiceEmulator(endpointManagerService);
+        EpmHealthReleaseOverrideEndpoint epmHealthReleaseOverrideEndpoint(SystemStatusService systemStatusService) {
+            return new EpmHealthReleaseOverrideEndpoint(systemStatusService);
+        }
+
+        @Bean
+        EndpointManagerServiceEmulator endpointManagerServiceEmulator(SystemStatusService systemStatusService) {
+            return new EndpointManagerServiceEmulator(systemStatusService);
         }
     }
 
@@ -39,8 +44,8 @@ public class CucumberSpringConfiguration {
     static class MockedServiceConfig {
         @Bean
         @Primary
-        EndpointManagerService endpointManagerService() {
-            return Mockito.mock(EndpointManagerService.class);
+        SystemStatusService systemStatusService() {
+            return Mockito.mock(SystemStatusService.class);
         }
     }
 }

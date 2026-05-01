@@ -28,9 +28,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework:spring-webflux'
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     testImplementation 'org.junit.platform:junit-platform-suite'
     testImplementation "io.cucumber:cucumber-java:${cucumberVersion}"
+    testImplementation "io.cucumber:cucumber-junit:${cucumberVersion}"
     testImplementation "io.cucumber:cucumber-spring:${cucumberVersion}"
     testImplementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
 }
@@ -38,6 +40,7 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
     include '**/*Runner.class'
+    include '**/*Test.class'
 }
 
 tasks.withType(JavaCompile).configureEach {

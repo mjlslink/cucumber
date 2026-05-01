@@ -1,6 +1,8 @@
 management:
+  server:
+    port: 0
   endpoints:
     web:
       base-path: /epp/netauths/h2/api/actuator
       exposure:
-        include: health,info,epm-health-override
+        include: health,info,epm-health-override,epm-health-release-override

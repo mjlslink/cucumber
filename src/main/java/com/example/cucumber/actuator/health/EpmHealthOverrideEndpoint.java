@@ -1,6 +1,6 @@
-package com.example.cucumber.actuator;
+package com.example.cucumber.actuator.health;
 
-import com.example.cucumber.service.EndpointManagerService;
+import com.example.cucumber.service.SystemStatusService;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointResponse;
@@ -10,16 +10,16 @@ import org.springframework.stereotype.Component;
 @Endpoint(id = "epm-health-override")
 public class EpmHealthOverrideEndpoint {
 
-    private final EndpointManagerService endpointManagerService;
+    private final SystemStatusService systemStatusService;
 
-    public EpmHealthOverrideEndpoint(EndpointManagerService endpointManagerService) {
-        this.endpointManagerService = endpointManagerService;
+    public EpmHealthOverrideEndpoint(SystemStatusService systemStatusService) {
+        this.systemStatusService = systemStatusService;
     }
 
     @SuppressWarnings("unused")
     @WriteOperation
     public WebEndpointResponse<Object> override(String status) {
-        endpointManagerService.overrideHealthStatus(status);
+        systemStatusService.overrideHealthStatus(status);
         return new WebEndpointResponse<>(null, WebEndpointResponse.STATUS_NO_CONTENT);
     }
 }
