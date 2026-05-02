@@ -5,4 +5,4 @@ management:
     web:
       base-path: /epp/netauths/h2/api/actuator
       exposure:
-        include: health,info,epm-health-override,epm-health-release-override
+        include: health,info,epm-health-override,epm-health-release-override,epm-load-endpoint,epm-start-override,epm-start-endpont,epm-delete-endpont,epm-endpoints

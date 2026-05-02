@@ -1,7 +1,12 @@
 package com.example.cucumber.bdd;
 
+import com.example.cucumber.actuator.EpmLoadEndpoint;
+import com.example.cucumber.actuator.EpmDeleteEndpoint;
+import com.example.cucumber.actuator.EpmEndpoints;
+import com.example.cucumber.actuator.EpmStartEndpoint;
 import com.example.cucumber.actuator.health.EpmHealthReleaseOverrideEndpoint;
 import com.example.cucumber.actuator.health.EpmHealthOverrideEndpoint;
+import com.example.cucumber.service.EndpointManagerService;
 import com.example.cucumber.service.SystemStatusService;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.mockito.Mockito;
@@ -35,8 +40,31 @@ public class CucumberSpringConfiguration {
         }
 
         @Bean
-        EndpointManagerServiceEmulator endpointManagerServiceEmulator(SystemStatusService systemStatusService) {
-            return new EndpointManagerServiceEmulator(systemStatusService);
+        EpmLoadEndpoint epmLoadEndpoint(EndpointManagerService endpointManagerService) {
+            return new EpmLoadEndpoint(endpointManagerService);
+        }
+
+        @Bean
+        EpmDeleteEndpoint epmDeleteEndpoint(EndpointManagerService endpointManagerService) {
+            return new EpmDeleteEndpoint(endpointManagerService);
+        }
+
+        @Bean
+        EpmStartEndpoint epmStartEndpoint(EndpointManagerService endpointManagerService) {
+            return new EpmStartEndpoint(endpointManagerService);
+        }
+
+        @Bean
+        EpmEndpoints epmEndpoints(EndpointManagerService endpointManagerService) {
+            return new EpmEndpoints(endpointManagerService);
+        }
+
+        @Bean
+        EndpointManagerServiceEmulator endpointManagerServiceEmulator(
+                SystemStatusService systemStatusService,
+                EndpointManagerService endpointManagerService
+        ) {
+            return new EndpointManagerServiceEmulator(systemStatusService, endpointManagerService);
         }
     }
 
@@ -46,6 +74,12 @@ public class CucumberSpringConfiguration {
         @Primary
         SystemStatusService systemStatusService() {
             return Mockito.mock(SystemStatusService.class);
+        }
+
+        @Bean
+        @Primary
+        EndpointManagerService endpointManagerService() {
+            return Mockito.mock(EndpointManagerService.class);
         }
     }
 }
