@@ -32,13 +32,15 @@ Feature: EPM health override actuator
 
   Scenario: Delete endpoint through the custom actuator endpoint
     Given the actuator endpoint "/epm-delete-endpont" is available
-    When I call actuator endpoint "/epm-delete-endpont" with JSON field "endpointName" set to "payments"
+    When I call actuator endpoint "/epm-delete-endpont" with DELETE path parameter "payments"
     Then the actuator request returns status 204
     And EndpointManagerService receives deleteEndpoint with "payments"
 
   Scenario: List endpoints through the custom actuator endpoint
     Given the actuator endpoint "/epm-endpoints" is available
+    And EndpointManagerService has endpoint "payments" of type "http"
     When I call actuator endpoint "/epm-endpoints" with GET
     Then the actuator request returns status 200
     And EndpointManagerService receives getEndpoints
+    And the actuator response includes endpoint "payments" of type "http"
 

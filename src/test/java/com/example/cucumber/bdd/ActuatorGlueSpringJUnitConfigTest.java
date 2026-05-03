@@ -8,10 +8,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-@SpringJUnitConfig(classes = CucumberSpringConfiguration.LibraryTestBootConfig.class)
-@SpringBootTest(classes = CucumberSpringConfiguration.LibraryTestBootConfig.class,
+@SpringJUnitConfig(classes = ActuatorConfig.class)
+@SpringBootTest(classes = ActuatorConfig.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(CucumberSpringConfiguration.MockedServiceConfig.class)
+@Import(EndpointManagerMockedServicesConfig.class)
 @ActiveProfiles("test")
 class ActuatorGlueSpringJUnitConfigTest {
 
@@ -22,6 +22,8 @@ class ActuatorGlueSpringJUnitConfigTest {
             + "}";
     private static final String START_ENDPOINT_NAME = "payments";
     private static final String DELETE_ENDPOINT_NAME = "payments";
+    private static final String ENDPOINTS_ENDPOINT_NAME = "payments";
+    private static final String ENDPOINTS_ENDPOINT_TYPE = "http";
 
     @LocalManagementPort
     private int managementPort;
@@ -80,7 +82,7 @@ class ActuatorGlueSpringJUnitConfigTest {
 
         glue.beforeScenario();
         glue.startActuatorAvailable();
-        glue.callActuatorEndpointWithSingleJsonField("/epm-start-override", "endpointName", START_ENDPOINT_NAME);
+        glue.callActuatorEndpointWithSingleJsonField("/epm-start-endpont", "endpointName", START_ENDPOINT_NAME);
         glue.overrideRequestSucceeds();
         glue.endpointManagerServiceReceivesStartEndpointWith(START_ENDPOINT_NAME);
     }
@@ -90,9 +92,11 @@ class ActuatorGlueSpringJUnitConfigTest {
         ActuatorGlue glue = new ActuatorGlue(managementPort, emulator);
 
         glue.beforeScenario();
+        glue.endpointManagerServiceHasEndpointOfType(ENDPOINTS_ENDPOINT_NAME, ENDPOINTS_ENDPOINT_TYPE);
         glue.callActuatorEndpointWithGet("/epm-endpoints");
         glue.actuatorRequestReturnsStatus(200);
         glue.endpointManagerServiceReceivesGetEndpoints();
+        glue.actuatorResponseIncludesEndpointOfType(ENDPOINTS_ENDPOINT_NAME, ENDPOINTS_ENDPOINT_TYPE);
     }
 
     @Test
@@ -100,7 +104,7 @@ class ActuatorGlueSpringJUnitConfigTest {
         ActuatorGlue glue = new ActuatorGlue(managementPort, emulator);
 
         glue.beforeScenario();
-        glue.callActuatorEndpointWithSingleJsonField("/epm-delete-endpont", "endpointName", DELETE_ENDPOINT_NAME);
+        glue.callActuatorEndpointWithDeletePathParameter("/epm-delete-endpont", DELETE_ENDPOINT_NAME);
         glue.overrideRequestSucceeds();
         glue.endpointManagerServiceReceivesDeleteEndpointWith(DELETE_ENDPOINT_NAME);
     }

@@ -1,11 +1,15 @@
 package com.example.cucumber.bdd;
 
+import com.example.cucumber.endpoints.Endpoint;
 import com.example.cucumber.service.EndpointManagerService;
 import com.example.cucumber.service.SystemStatusService;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Component
 public class EndpointManagerServiceEmulator {
@@ -48,5 +52,12 @@ public class EndpointManagerServiceEmulator {
 
     public void verifyDeleteEndpointCalledWith(String endpointName) {
         verify(endpointManagerService).deleteEndpoint(endpointName);
+    }
+
+    public void seedGetEndpointsResponse(String endpointName, String endpointType) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setEndpointName(endpointName);
+        endpoint.setEndpointType(endpointType);
+        when(endpointManagerService.getEndpoints()).thenReturn(List.of(endpoint));
     }
 }

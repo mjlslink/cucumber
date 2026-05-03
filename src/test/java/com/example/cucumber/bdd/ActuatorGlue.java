@@ -1,5 +1,7 @@
 package com.example.cucumber.bdd;
 
+import com.example.cucumber.endpoints.Endpoint;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.Before;
@@ -12,9 +14,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ActuatorGlue {
 
@@ -31,6 +38,7 @@ public class ActuatorGlue {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private WebClient webClient;
     private ResponseEntity<String> response;
+    private ResponseEntity<List<Endpoint>> responseList;
 
     public ActuatorGlue(@LocalManagementPort int managementPort, EndpointManagerServiceEmulator emulator) {
         this.managementPort = managementPort;
@@ -69,6 +77,11 @@ public class ActuatorGlue {
     @Given("the epm endpoints actuator is available")
     public void endpointsActuatorAvailable() {
         actuatorEndpointIsAvailable(ACTUATOR_ENDPOINTS_PATH);
+    }
+
+    @Given("EndpointManagerService has endpoint {string} of type {string}")
+    public void endpointManagerServiceHasEndpointOfType(String endpointName, String endpointType) {
+        emulator.seedGetEndpointsResponse(endpointName, endpointType);
     }
 
     @Given("the actuator endpoint {string} is available")
@@ -114,6 +127,16 @@ public class ActuatorGlue {
         callActuatorWithBody(endpointPath, Map.of(field, json));
     }
 
+    @When("I call actuator endpoint {string} with DELETE query parameter {string} set to {string}")
+    public void callActuatorEndpointWithDeleteQueryParameter(String endpointPath, String parameterName, String parameterValue) {
+        callActuatorWithDelete(endpointPath, parameterName, parameterValue);
+    }
+
+    @When("I call actuator endpoint {string} with DELETE path parameter {string}")
+    public void callActuatorEndpointWithDeletePathParameter(String endpointPath, String parameterValue) {
+        callActuatorWithDeletePath(endpointPath, parameterValue);
+    }
+
     @Then("the override request succeeds")
     public void overrideRequestSucceeds() {
         actuatorRequestReturnsStatus(HttpStatus.NO_CONTENT.value());
@@ -121,7 +144,7 @@ public class ActuatorGlue {
 
     @Then("the actuator request returns status {int}")
     public void actuatorRequestReturnsStatus(int expectedStatusCode) {
-        assertEquals(expectedStatusCode, response.getStatusCode().value());
+        assertEquals(expectedStatusCode, currentStatusCode());
     }
 
     @Then("EndpointManagerService receives overrideHealthStatus with {string}")
@@ -152,6 +175,16 @@ public class ActuatorGlue {
     @Then("EndpointManagerService receives getEndpoints")
     public void endpointManagerServiceReceivesGetEndpoints() {
         emulator.verifyGetEndpointsCalled();
+    }
+
+    @Then("the actuator response includes endpoint {string} of type {string}")
+    public void actuatorResponseIncludesEndpointOfType(String endpointName, String endpointType) {
+        List<Endpoint> endpoints = deserializeEndpointResponse();
+        assertTrue(
+                endpoints.stream().anyMatch(endpoint -> endpointName.equals(endpoint.getEndpointName())
+                        && endpointType.equals(endpoint.getEndpointType())),
+                "Expected endpoint not present in actuator response"
+        );
     }
 
     @Then("EndpointManagerService receives deleteEndpoint with {string}")
@@ -192,6 +225,30 @@ public class ActuatorGlue {
                 .block();
     }
 
+    private void callActuatorWithDelete(String endpointPath, String parameterName, String parameterValue) {
+        String normalizedEndpointPath = endpointPath.startsWith("/") ? endpointPath : "/" + endpointPath;
+        String encodedParameterName = URLEncoder.encode(parameterName, StandardCharsets.UTF_8);
+        String encodedParameterValue = URLEncoder.encode(parameterValue, StandardCharsets.UTF_8);
+        String endpointUrl = "http://localhost:" + managementPort + MANAGEMENT_BASE_PATH + normalizedEndpointPath
+                + "?" + encodedParameterName + "=" + encodedParameterValue;
+        response = webClient.delete()
+                .uri(endpointUrl)
+                .retrieve()
+                .toEntity(String.class)
+                .block();
+    }
+
+    private void callActuatorWithDeletePath(String endpointPath, String parameterValue) {
+        String normalizedEndpointPath = endpointPath.startsWith("/") ? endpointPath : "/" + endpointPath;
+        String normalizedParameterValue = parameterValue.startsWith("/") ? parameterValue.substring(1) : parameterValue;
+        String endpointUrl = "http://localhost:" + managementPort + MANAGEMENT_BASE_PATH + normalizedEndpointPath + "/" + normalizedParameterValue;
+        response = webClient.delete()
+                .uri(endpointUrl)
+                .retrieve()
+                .toEntity(String.class)
+                .block();
+    }
+
     private String toJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
@@ -205,6 +262,29 @@ public class ActuatorGlue {
             return objectMapper.readTree(json).toString();
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Invalid JSON payload provided", e);
+        }
+    }
+
+    private int currentStatusCode() {
+        if (response != null) {
+            return response.getStatusCode().value();
+        }
+        if (responseList != null) {
+            return responseList.getStatusCode().value();
+        }
+        throw new IllegalStateException("No actuator response was captured");
+    }
+
+    private List<Endpoint> deserializeEndpointResponse() {
+        if (responseList != null && responseList.getBody() != null) {
+            return responseList.getBody();
+        }
+        assertNotNull(response, "Expected GET response to be available");
+        assertNotNull(response.getBody(), "Expected GET response body to be available");
+        try {
+            return objectMapper.readValue(response.getBody(), new TypeReference<List<Endpoint>>() { });
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Unable to deserialize actuator response body", e);
         }
     }
 }
